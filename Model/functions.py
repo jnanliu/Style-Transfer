@@ -4,7 +4,7 @@ import torch.nn as nn
 import torchvision.models as model
 
 style_layers, content_layers = [0, 5, 10, 19, 28], [25]
-vgg = model.vgg19(pretrained=False).features
+vgg = model.vgg19(pretrained=True).features
 if torch.cuda.is_available() :
     vgg = vgg.cuda()
 
@@ -18,13 +18,9 @@ class ContentLoss(nn.Module) :
         self.criterion = nn.MSELoss()
 
     def forward(self, inputs) :
-        self.loss = self.criterion(inputs * self.weight, self.target * self.weight)
+        self.loss = self.weight * self.criterion(inputs, self.target)
         outputs = inputs.clone()
         return outputs
-
-    def backward(self, retain_graph = True) :
-        self.loss.backward(retain_graph = retain_graph)
-        return self.loss
 
 ## ------------------- gram matix function ------------------ ##
 class Gram(nn.Module) :
@@ -49,13 +45,9 @@ class StyleLoss(nn.Module) :
 
     def forward(self, inputs) :
         gram_features = self.gram(inputs)
-        self.loss = self.criterion(gram_features * self.weight, self.target * self.weight)
+        self.loss = self.weight * self.criterion(gram_features, self.target)
         outputs = inputs.clone()
         return outputs
-
-    def backward(self, retain_graph = True) :
-        self.loss.backward(retain_graph = retain_graph)
-        return self.loss
 
 ## ------------------- total variation denoising loss function ------------------ ##
 class TotalVariationDenoisingLoss(nn.Module) :
@@ -70,15 +62,11 @@ class TotalVariationDenoisingLoss(nn.Module) :
         outputs = inputs.clone()
         return outputs
 
-    def backward(self, retain_graph = True) :
-        self.loss.backward(retain_graph = retain_graph)
-        return self.loss
-
 ## ------------------- train model ------------------ ##
 class StyleTransferModel(nn.Module) :
 
     def __init__(self, style_img, content_img, base_model = vgg,
-                 style_weight = 1000, content_weight = 1, total_variation_denoising_weight = 10):
+                 style_weight = 1e6, content_weight = 1, total_variation_denoising_weight = 10):
         super(StyleTransferModel, self).__init__()
         self.style_img = style_img
         self.content_img = content_img
@@ -137,6 +125,3 @@ class StyleTransferModel(nn.Module) :
     def forward(self, inputs) :
         outputs = self.layers(inputs)
         return outputs
-if __name__ == '__main__' :
-    for idx, layer in enumerate(vgg) :
-        print(idx, layer)

@@ -21,7 +21,7 @@ def train() :
     content_loss_list, style_loss_list, total_variation_denoising_loss_list = \
         model.generate_layers()
 
-    optimizer = optim.LBFGS(input_img.parameters())
+    optimizer = optim.LBFGS([input_img()])
 
     if cuda.is_available() :
         model = model.cuda()
@@ -32,23 +32,32 @@ def train() :
 
         def closure() :
             start_time = time.time()
+            optimizer.zero_grad()
 
             model(input_img())
-            style_score, content_score, total_variation_denoising_score = 0., 0., 0.
+            style_score, content_score, total_variation_denoising_score = None, None, None
 
-            optimizer.zero_grad()
             for sl in style_loss_list :
-                style_score += sl.backward()
+                if style_score is None :
+                    style_score = sl.loss
+                else :
+                    style_score += sl.loss
             for cl in content_loss_list :
-                content_score += cl.backward()
+                if content_score is None :
+                    content_score = cl.loss
+                else :
+                    content_score += cl.loss
             for tl in total_variation_denoising_loss_list :
-                total_variation_denoising_score += tl.backward()
+                total_variation_denoising_score = tl.loss
+
+            loss = content_score + style_score + total_variation_denoising_score
+            loss.backward()
 
             epochs[0] += 1
             if epochs[0] % 10 == 0 :
                 print("epoch {:3d}, content loss {:.2f}, style loss {:.2f}, TV loss {:.2f}, {:.2f} sec".format(
                     epochs[0], content_score, style_score, total_variation_denoising_score, time.time() - start_time))
-                save_image(input_img.parmas)
+                save_image(input_img.params.clone())
 
             return content_score + style_score + total_variation_denoising_score
 

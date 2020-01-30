@@ -52,10 +52,6 @@ for idx, i in enumerate(vgg) :
             self.loss = self.weight * self.criterion(inputs, self.target)
             outputs = inputs.clone()
             return outputs
-
-        def backward(self, retain_graph = True) :
-            self.loss.backward(retain_graph = retain_graph)
-            return self.loss
     ```
 
 * $2.$ 风格损失函数
@@ -95,10 +91,6 @@ for idx, i in enumerate(vgg) :
             self.loss = self.weight * self.criterion(gram_features, self.target)
             outputs = inputs.clone()
             return outputs
-
-        def backward(self, retain_graph = True) :
-            self.loss.backward(retain_graph = retain_graph)
-            return self.loss
     ```
 
     这里为了避免格拉姆矩阵的元素太大，我们把矩阵整体除以矩阵的元素个数，即：$(C × M × N)$
@@ -124,10 +116,6 @@ for idx, i in enumerate(vgg) :
                             (inputs[:, :, :, 1:] - inputs[:, :, :, :-1]).abs().mean())
             outputs = inputs.clone()
             return outputs
-
-        def backward(self, retain_graph = True) :
-            self.loss.backward(retain_graph = retain_graph)
-            return self.loss
     ```
 
 #### 三、图像处理
@@ -185,6 +173,7 @@ for idx, i in enumerate(vgg) :
             super(GeneratedImage, self).__init__()
             self.parmas = nn.Parameter(torch.randn(1, 3, 512, 512), requires_grad=True)
             self.init()
+            self.parmas.requires_grad_()
 
         def init(self) :
             for weight in self.parmas :

@@ -29,6 +29,7 @@ def save_image(img) :
     t_mean = torch.as_tensor(mean, dtype=img.dtype, device=img.device)
     t_std = torch.as_tensor(std, dtype=img.dtype, device=img.device)
     img = img * t_std[:, None, None] + t_mean[:, None, None]
+    img = img.clamp(min=0., max=1.)
     img = transforms.ToPILImage()(img.cpu())
     img.save(BASE_DIR + "/g_image.jpg")
 
@@ -37,16 +38,8 @@ class GeneratedImage(nn.Module) :
 
     def __init__(self) :
         super(GeneratedImage, self).__init__()
-        self.parmas = nn.Parameter(torch.randn(1, 3, 512, 512), requires_grad=True)
-        self.init()
-
-    def init(self) :
-        for weight in self.parmas :
-            nn.init.normal_(weight, 0., 1.)
+        self.params = nn.Parameter(load_image(BASE_DIR + "/content.jpg"))
+        self.params = self.params.requires_grad_()
 
     def forward(self) :
-        return self.parmas
-
-if __name__ == '__main__' :
-    img = GeneratedImage().parmas
-    save_image(img)
+        return self.params
