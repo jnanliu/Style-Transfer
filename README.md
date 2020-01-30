@@ -6,7 +6,7 @@
 
 ```python
 import torchvision.models as model
-vgg = model.vgg19(pretrained=False).features
+vgg = model.vgg19(pretrained=True).features
 ```
 
 **$VGG-19$** 模型的结构如下：
